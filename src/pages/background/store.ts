@@ -1,8 +1,8 @@
 
 export function storeDefaultData(db: undefined | IDBDatabase) {
   const folderData = [
-    { id: 1, name: "Folder 1", num_notes: 0, pin_notes: [], description: "" },
-    { id: 1, name: "Folder 2", num_notes: 0, pin_notes: [], description: "" },
+    { id: 1, name: "Collection 1", num_notes: 0, pin_notes: [], description: "" },
+    { id: 2, name: "Collection 2", num_notes: 0, pin_notes: [], description: "" },
   ];
 
   // const noteData = [

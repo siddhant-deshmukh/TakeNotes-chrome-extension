@@ -1,4 +1,4 @@
-import { getAllFromCollection } from "./notesDB";
+import { createCollection, deleteCollectionByID, getAllFromCollection, updateCollection } from "./notesDB";
 import { storeDefaultData } from "./store";
 
 // background.js
@@ -43,7 +43,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     getAllFromCollection(sendResponse);
     return true; // Keep the message channel open for asynchronous response
   }
-
+  if (message.action === "createCollection"){
+    createCollection(message.payload, sendResponse)
+    return true;
+  }
+  if (message.action === "deleteCollection"){
+    deleteCollectionByID(message.payload, sendResponse)
+    return true;
+  }
+  if (message.action === "updateCollection"){
+    updateCollection(message.payload, sendResponse)
+    return true;
+  }
+  
   if (message.action === "getData") {
     dbPromise.then((db) => {
       // Perform IndexedDB operations to retrieve data

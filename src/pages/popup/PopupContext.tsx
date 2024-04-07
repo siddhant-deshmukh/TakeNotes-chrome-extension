@@ -33,8 +33,16 @@ export const PopupContextProvider = ({ children }: { children: React.ReactNode }
 
 
   useEffect(() => {
-
-
+    chrome.runtime.sendMessage({ action: "getAllFromCollection" }, (response) => {
+      if (response.error) {
+        console.error(response.error);
+      } else {
+        const data = response.data;
+        // Process the retrieved data
+        setCollections(data)
+        console.log(data);
+      }
+    });
   }, [])
 
   return (

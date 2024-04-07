@@ -8,7 +8,7 @@ import { ReactSortable } from "react-sortablejs"
 export function AllCollections() {
 
   const [editCollection, setEditCollection] = useState<null | ICollection>(null)
-  const { collections, setCollections, setCurrPage } = useContext(PopupContext)
+  const { setCollections, setCurrPage } = useContext(PopupContext)
 
   return (
     <div className="h-full relative rounded-xl bg-white">
@@ -17,7 +17,7 @@ export function AllCollections() {
         <EditCollectionModal setEditCollection={setEditCollection} collection={editCollection} />
       }
       <div className="flex  items-center space-x-5">
-        <button onClick={() => { setCurrPage(null) }} className="p-2">
+        <button onClick={() => { console.log("Here to null"); setCurrPage(null) }} className="p-2">
           <BackSvg size={5} />
         </button>
         <h1 className="text-lg">
@@ -27,27 +27,47 @@ export function AllCollections() {
       <div className="flex justify-end">
         <button
           onClick={() => {
-            setCollections((prev) => {
-              return prev.slice().concat([{ id: Math.floor(Math.random() * 1000), name: "Collection No. " + (prev.length + 1).toString(), description: "", num_notes: 0, pin_notes: [] }])
-            })
+            const newCollection: ICollection = { id: Math.floor(Math.random() * 100000), name: "New Collection", description: "", num_notes: 0, pin_notes: [] }
+            chrome.runtime.sendMessage({ action: "createCollection", payload: newCollection }, (response) => {
+              console.log(response)
+              if (response.error) {
+                console.error(response.error);
+              } else {
+                const data = response.data;
+                // Process the retrieved data
+                // setCollections(data)
+                setCollections((prev) => {
+                  return prev.slice().concat([newCollection])
+                })
+                console.log(response, data);
+              }
+            });
+
           }}
           className="p-1.5 rounded-full bg-gray-800 text-white font-medium mr-2.5">
           Create new Collection
         </button>
       </div>
-      <ul className="px-2 pt-3">
-        <ReactSortable handle=".listHandle" list={collections} setList={setCollections}>
-          {
-            collections.map((collection) => {
-              return <CollectionLi collection={collection} key={collection.id} setEditCollection={setEditCollection} />
-            })
-          }
-        </ReactSortable>
-      </ul>
+      <CollectionUl setEditCollection={setEditCollection} />
     </div>
   )
 }
 
+export function CollectionUl({ setEditCollection }: { setEditCollection: React.Dispatch<React.SetStateAction<ICollection>> }) {
+  const { collections, setCollections } = useContext(PopupContext)
+
+  return (
+    <ul className="px-2 pt-3">
+      <ReactSortable handle=".listHandle" list={collections} setList={setCollections}>
+        {
+          collections.map((collection) => {
+            return <CollectionLi collection={collection} key={collection.id} setEditCollection={setEditCollection} />
+          })
+        }
+      </ReactSortable>
+    </ul>
+  )
+}
 export function CollectionLi({ collection, setEditCollection }: { collection: ICollection, setEditCollection: React.Dispatch<React.SetStateAction<ICollection>> }) {
   const [expand, setExpand] = useState<boolean>(false)
   const { setCollections } = useContext(PopupContext)
@@ -85,9 +105,21 @@ export function CollectionLi({ collection, setEditCollection }: { collection: IC
         </button>
         <button
           onClick={() => {
-            setCollections((prev) => {
-              return prev.slice().filter((col) => col.id != collection.id)
-            })
+            chrome.runtime.sendMessage({ action: "deleteCollection", payload: collection.id }, (response) => {
+              console.log(response)
+              if (response.error) {
+                console.error(response.error);
+              } else {
+                const data = response.data;
+                // Process the retrieved data
+                // setCollections(data)
+                setCollections((prev) => {
+                  return prev.slice().filter((col) => col.id != collection.id)
+                })
+                console.log(response, data);
+              }
+            });
+
           }}
           className="fill-red-700 p-1.5">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
@@ -109,6 +141,30 @@ export function EditCollectionModal({ collection, setEditCollection }: { collect
   const { setCollections } = useContext(PopupContext)
   const [form, setForm] = useState<ICollection>(collection)
 
+  function EditCollection(form: ICollection){
+    chrome.runtime.sendMessage({ action: "updateCollection", payload: form }, (response) => {
+      // console.log(response)
+      if (response.error) {
+        console.error(response.error);
+      } else {
+        const data = response.data;
+        // Process the retrieved data
+        // setCollections(data)
+        setEditCollection(null)
+        setCollections((prev) => {
+          const new_ = prev.map((col) => {
+            if (col.id != collection.id)
+              return { ...col };
+            else
+              return { ...form }
+          })
+          return new_
+        })
+        console.log(response, data);
+      }
+    });
+  }
+
   return (
     <div className="absolute w-full h-full bg-black bg-opacity-40 p-5 z-20">
       <div className="w-full h-full bg-white rounded-lg">
@@ -122,7 +178,7 @@ export function EditCollectionModal({ collection, setEditCollection }: { collect
             X
           </button>
         </div>
-        <form className="px-5 flex flex-col space-y-2.5 pt-2.5">
+        <div className="px-5 flex flex-col space-y-2.5 pt-2.5">
           <div>
             <label htmlFor="small-input" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Title</label>
             <input
@@ -147,21 +203,23 @@ export function EditCollectionModal({ collection, setEditCollection }: { collect
           </div>
           <button
             onClick={() => {
-              setCollections((prev) => {
-                const new_ = prev.map((col) => {
-                  if (col.id != collection.id)
-                    return { ...col };
-                  else
-                    return { ...form }
-                })
-                return new_
-              })
-              setEditCollection(null)
+              // setEditCollection(null)
+              // setCollections((prev) => {
+              //   const new_ = prev.map((col) => {
+              //     if (col.id != collection.id)
+              //       return { ...col };
+              //     else
+              //       return { ...form }
+              //   })
+              //   return new_
+              // })
+
+              EditCollection(form)
             }}
             className="bg-gray-800 ml-auto text-white p-2 rounded-lg font-semibold">
             Save
           </button>
-        </form>
+        </div>
       </div>
     </div>
   )
