@@ -4,6 +4,7 @@ import { BackSvg } from "./Loding"
 import { useState } from "react"
 import { ICollection } from "@root/src/types"
 import { ReactSortable } from "react-sortablejs"
+import { useEffect } from "react"
 
 export function AllCollections() {
 
@@ -56,9 +57,19 @@ export function AllCollections() {
 export function CollectionUl({ setEditCollection }: { setEditCollection: React.Dispatch<React.SetStateAction<ICollection>> }) {
   const { collections, setCollections } = useContext(PopupContext)
 
+  useEffect(() => {
+    console.log("Changed ", collections)
+    chrome.runtime.sendMessage({ action: "updateCollectionListOrder", payload: { listOrder: collections.map(({ id })=> id), updatedAt: Date.now() } }, (response) => {
+      console.log(response)
+    });
+  }, [collections])
+
   return (
     <ul className="px-2 pt-3">
-      <ReactSortable handle=".listHandle" list={collections} setList={setCollections}>
+      <ReactSortable
+        handle=".listHandle"
+        list={collections}
+        setList={setCollections}>
         {
           collections.map((collection) => {
             return <CollectionLi collection={collection} key={collection.id} setEditCollection={setEditCollection} />
@@ -141,7 +152,7 @@ export function EditCollectionModal({ collection, setEditCollection }: { collect
   const { setCollections } = useContext(PopupContext)
   const [form, setForm] = useState<ICollection>(collection)
 
-  function EditCollection(form: ICollection){
+  function EditCollection(form: ICollection) {
     chrome.runtime.sendMessage({ action: "updateCollection", payload: form }, (response) => {
       // console.log(response)
       if (response.error) {

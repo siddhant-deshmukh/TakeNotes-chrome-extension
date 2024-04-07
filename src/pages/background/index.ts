@@ -1,4 +1,4 @@
-import { createCollection, deleteCollectionByID, getAllFromCollection, updateCollection } from "./notesDB";
+import { createCollection, deleteCollectionByID, getAllFromCollection, updateCollection, updateCollectionListOrder } from "./notesDB";
 import { storeDefaultData } from "./store";
 
 // background.js
@@ -6,11 +6,13 @@ console.log("bg script")
 
 let db: undefined | IDBDatabase;
 export const dbPromise = new Promise((resolve: (db: IDBDatabase) => void, reject: (error: DOMException) => void) => {
-  const request = self.indexedDB.open("TakeNotesDB", 1);
+  const request = self.indexedDB.open("TakeNotesDB", 2);
 
   request.onupgradeneeded = (event) => {
     db = request.result;
-    const objectStore = db.createObjectStore("Collection", { keyPath: "id" });
+    const collectionStore = db.createObjectStore("Collection", { keyPath: "id" });
+    const listStore = db.createObjectStore("CollectionList", { keyPath: "id" });
+
     // objectStore.createIndex("pin_notes", "pin_notes", { unique: false, multiEntry: true });
 
     const notesStore = db.createObjectStore("Notes", { autoIncrement: true });
@@ -43,19 +45,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     getAllFromCollection(sendResponse);
     return true; // Keep the message channel open for asynchronous response
   }
-  if (message.action === "createCollection"){
+  if (message.action === "createCollection") {
     createCollection(message.payload, sendResponse)
     return true;
   }
-  if (message.action === "deleteCollection"){
+  if (message.action === "deleteCollection") {
     deleteCollectionByID(message.payload, sendResponse)
     return true;
   }
-  if (message.action === "updateCollection"){
+  if (message.action === "updateCollection") {
     updateCollection(message.payload, sendResponse)
     return true;
   }
-  
+  if (message.action === "updateCollectionListOrder") {
+    updateCollectionListOrder(message.payload, sendResponse)
+    return true;
+  }
+
   if (message.action === "getData") {
     dbPromise.then((db) => {
       // Perform IndexedDB operations to retrieve data
