@@ -11,13 +11,13 @@ export default function Home() {
   
 
   return (
-    <div className="rounded-xl bg-white h-full">
-      <SelectCollectionNav />
-      <h2 className="p-2.5">
+    <div className="flex flex-col rounded-xl bg-white h-full">
+      <h2 className="p-2.5 h-full">
         {
           JSON.stringify(collections)
         }
       </h2>
+      <SelectCollectionNav />
     </div>
   )
 
